@@ -1,3 +1,8 @@
+pub const G_WIDTH: f32 = 1000.0;
+pub const G_HEIGHT: f32 = 1000.0;
+pub const ROAD_WIDTH: f32 = 75.0;
+pub const INTERSECTION_SIZE: f32 = 75.0;
+
 // Vehicle direction
 enum Direction {
     North,
@@ -25,8 +30,9 @@ struct Vehicle {
     y: f32,
     direction: Direction,
     route: Route,
-    velocity: f32,
-    color: (u8, u8, u8),
+    speed: f32,
+    frame_index: usize,
+    frame_timer: f32,
 }
 
 // Traffic light
@@ -41,5 +47,5 @@ struct TrafficLight {
 struct Lane {
     direction: Direction,
     vehicles: Vec<Vehicle>,
-    capacity: usize,
+    capacity: usize, // capacity = floor(lane_length / (vehicle_length + safety_gap))
 }
