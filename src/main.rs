@@ -1,139 +1,163 @@
 use macroquad::prelude::*;
 
-mod types;
-use types::*;
+mod background;
+mod cars;
+mod traffic_light;
+use background::*;
+use cars::*;
 
-fn window_conf() -> Conf {
-    Conf {
-        window_title: "Road Intersection".to_string(),
-        window_width: G_WIDTH as i32,
-        window_height: G_HEIGHT as i32,
-        window_resizable: false,
-        fullscreen: false,
-        ..Default::default()
-    }
-}
+use crate::traffic_light::TrafficLight;
 
-#[macroquad::main(window_conf)]
+#[macroquad::main("HIT THE ROAD JACK")]
 async fn main() {
-    let grass: Texture2D = load_texture("assets/background.png").await.unwrap();
-    grass.set_filter(FilterMode::Nearest);
+    let bg = Scene::new(900., 700.);
+
+    let mut lights: Vec<TrafficLight> = Vec::new();
+    lights.push(TrafficLight::new(bg.window_width / 2. + 61., bg.window_height / 2. + 61., false)); // For UP traffic
+    lights.push(TrafficLight::new(bg.window_width / 2. - 100., bg.window_height / 2. - 100., false)); // For DOWN traffic
+    lights.push(TrafficLight::new(bg.window_width / 2. - 100., bg.window_height / 2. + 61., true)); // For RIGHT traffic
+    lights.push(TrafficLight::new(bg.window_width / 2. + 61., bg.window_height / 2. - 100., true)); // For LEFT traffic
+
+    let mut cars: Vec<Cars> = vec![];
+    
+    let mut last_light_change = get_time();
+
     loop {
+        if is_key_pressed(KeyCode::Up) {
+            try_spawn_car(
+                &mut cars,
+                Direction::UP,
+                (bg.window_width / 2. + 5., bg.window_height),
+                80.,
+                &bg,
+            );
+        }
+        if is_key_pressed(KeyCode::Down) {
+            try_spawn_car(
+                &mut cars,
+                Direction::DOWN,
+                (bg.window_width / 2. - 55., -60.),
+                20.,
+                &bg,
+            );
+        }
+        if is_key_pressed(KeyCode::Right) {
+            try_spawn_car(
+                &mut cars,
+                Direction::RIGHT,
+                (-60., bg.window_height / 2. + 5.),
+                20.,
+                &bg,
+            );
+        }
+        if is_key_pressed(KeyCode::Left) {
+            try_spawn_car(
+                &mut cars,
+                Direction::LEFT,
+                (bg.window_width, bg.window_height / 2. - 55.),
+                80.,
+                &bg,
+            );
+        }
+
+        if get_time() - last_light_change >= 5. {
+            for light in lights.iter_mut() {
+                light.change_light();
+            }
+            last_light_change = get_time();
+        }
+
         clear_background(BLACK);
-        draw_texture_ex(
-            &grass,
-            0.0,
-            0.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
-                ..Default::default()
-            },
-        );
-        // North : Up
-        draw_rectangle(
-            G_HEIGHT / 2.0, // x
-            0.0,            // y
-            ROAD_WIDTH,     // width
-            G_HEIGHT,       // width
-            BLACK,
-        );
-        // South : Down
-        draw_rectangle(
-            G_HEIGHT / 2.0 - ROAD_WIDTH, // x
-            0.0,                         // y
-            ROAD_WIDTH,                  // width
-            G_HEIGHT,                    // width
-            DARKGRAY,
-        );
-        // East : Left
-        draw_rectangle(
-            0.0,                        // y
-            G_WIDTH / 2.0 - ROAD_WIDTH, // x
-            G_WIDTH,                    // width
-            ROAD_WIDTH,                 // width
-            DARKGRAY,
-        );
-        // West : Right
-        draw_rectangle(
-            0.0,           // y
-            G_WIDTH / 2.0, // x
-            G_WIDTH,       // width
-            ROAD_WIDTH,    // width
-            BLACK,
-        );
+        bg.draw();
 
-        draw_horizontal_dashed_line(
-            G_HEIGHT / 2.0 - 5.0, // y position
-            0.0,                  // start x
-            screen_width(),       // end x
-            30.0,                 // dash length
-            25.0,                 // gap
-            6.0,                  // thickness
-            WHITE,
-        );
+        for car in &mut cars {
+            car.car_draw(car.distination.colorize());
+        }
 
-        // Vertical dashed line
-        draw_vertical_dashed_line(
-            G_WIDTH / 2.0 - 5.0, // x position
-            0.0,                 // start y
-            screen_height(),     // end y
-            30.0,                // dash length
-            25.0,                // gap
-            6.0,                 // thickness
-            WHITE,
-        );
-        // finish frame
+        for i in 0..cars.len() {
+            let mut can_move = true;
+            let car_rect = Rect::new(cars[i].position.0, cars[i].position.1, 60., 60.);
+            let mut sensor_rect = car_rect;
+            
+            match cars[i].direction {
+                Direction::UP => {
+                    let stop_line = bg.window_height / 2. + 80.;
+                    if !lights[0].state && car_rect.top() <= stop_line && car_rect.top() > stop_line - 10. {
+                        can_move = false;
+                    }
+                    sensor_rect.y = car_rect.y - 5.;
+                }
+                Direction::DOWN => {
+                    let stop_line = bg.window_height / 2. - 80.;
+                    if !lights[1].state && car_rect.bottom() >= stop_line && car_rect.bottom() < stop_line + 10. {
+                        can_move = false;
+                    }
+                    sensor_rect.y = car_rect.y + 5.;
+                }
+                Direction::RIGHT => {
+                    let stop_line = bg.window_width / 2. - 80.;
+                    if !lights[2].state && car_rect.right() >= stop_line && car_rect.right() < stop_line + 10. {
+                        can_move = false;
+                    }
+                    sensor_rect.x = car_rect.x + 5.;
+                }
+                Direction::LEFT => {
+                    let stop_line = bg.window_width / 2. + 80.;
+                    if !lights[3].state && car_rect.left() <= stop_line && car_rect.left() > stop_line - 10. {
+                        can_move = false;
+                    }
+                    sensor_rect.x = car_rect.x - 5.;
+                }
+            }
+
+            for j in 0..cars.len() {
+                if i == j { continue; }
+                let other_car_rect = Rect::new(cars[j].position.0, cars[j].position.1, 60., 60.);
+                if sensor_rect.overlaps(&other_car_rect) {
+                    can_move = false;
+                    break;
+                }
+            }
+
+            if can_move {
+                match cars[i].direction {
+                    Direction::LEFT => cars[i].position.0 -= 3.,
+                    Direction::RIGHT => cars[i].position.0 += 3.,
+                    Direction::UP => cars[i].position.1 -= 3.,
+                    Direction::DOWN => cars[i].position.1 += 3.,
+                }
+            }
+        }
+        
+        for light in lights.iter() {
+            light.draw_light();
+        }
+
         next_frame().await
     }
 }
 
-fn draw_horizontal_dashed_line(
-    y: f32,
-    x_start: f32,
-    x_end: f32,
-    dash_len: f32,
-    gap: f32,
-    thickness: f32,
-    color: Color,
+fn try_spawn_car(
+    cars: &mut Vec<Cars>,
+    direction: Direction,
+    spawn_position: (f32, f32),
+    spawn_distance: f32,
+    bg: &Scene,
 ) {
-    let mut x = x_start;
-    let inter_left = G_WIDTH / 2.0 - INTERSECTION_SIZE / 2.0;
-    let inter_right = G_WIDTH / 2.0 + INTERSECTION_SIZE / 2.0;
+    let can_spawn = cars
+        .iter()
+        .rev()
+        .find(|c| c.direction == direction)
+        .map_or(true, |last_car| match direction {
+            Direction::UP => last_car.position.1 < bg.window_height - spawn_distance,
+            Direction::DOWN => last_car.position.1 > spawn_distance,
+            Direction::RIGHT => last_car.position.0 > spawn_distance,
+            Direction::LEFT => last_car.position.0 < bg.window_width - spawn_distance,
+        });
 
-    while x < x_end {
-        let dash_right = x + dash_len;
-
-        // Only draw if the dash is fully outside the intersection zone
-        if dash_right < inter_left || x > inter_right {
-            draw_rectangle(x, y, dash_len, thickness, color);
-        }
-
-        x += dash_len + gap;
-    }
-}
-
-fn draw_vertical_dashed_line(
-    x: f32,
-    y_start: f32,
-    y_end: f32,
-    dash_len: f32,
-    gap: f32,
-    thickness: f32,
-    color: Color,
-) {
-    let mut y = y_start;
-    let inter_top = G_HEIGHT / 2.0 - INTERSECTION_SIZE;
-    let inter_bottom = G_HEIGHT / 2.0 + INTERSECTION_SIZE;
-
-    while y < y_end {
-        let dash_bottom = y + dash_len;
-
-        // Only draw if the dash is fully outside the intersection zone
-        if dash_bottom < inter_top || y > inter_bottom {
-            draw_rectangle(x, y, thickness, dash_len, color);
-        }
-
-        y += dash_len + gap;
+    if can_spawn {
+        let dis = get_dis();
+        let new_car = Cars::new(spawn_position, direction, dis);
+        cars.push(new_car);
     }
 }
