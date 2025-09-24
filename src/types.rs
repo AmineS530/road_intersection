@@ -1,10 +1,10 @@
 pub const G_WIDTH: f32 = 1000.0;
 pub const G_HEIGHT: f32 = 1000.0;
 pub const ROAD_WIDTH: f32 = 75.0;
-pub const INTERSECTION_SIZE: f32 = 75.0;
+pub const INTERSECTION_SIZE: f32 = 150.0;
 
 // Vehicle direction
-enum Direction {
+pub enum Direction {
     North,
     South,
     East,
@@ -12,20 +12,20 @@ enum Direction {
 }
 
 // Route choice
-enum Route {
+pub enum Route {
     Left,
     Right,
     Straight,
 }
 
 // Traffic light state
-enum Light {
+pub enum Light {
     Red,
     Green,
 }
 
 // Vehicle
-struct Vehicle {
+pub struct Vehicle {
     x: f32,
     y: f32,
     direction: Direction,
@@ -36,7 +36,7 @@ struct Vehicle {
 }
 
 // Traffic light
-struct TrafficLight {
+pub struct TrafficLight {
     direction: Direction,
     state: Light,
     timer: f32,      // counts time since last switch
@@ -44,8 +44,11 @@ struct TrafficLight {
 }
 
 // Road / lane capacity
-struct Lane {
+pub struct Lane {
     direction: Direction,
+    start_x: f32,
+    start_y: f32,
+    length: f32,
     vehicles: Vec<Vehicle>,
     capacity: usize, // capacity = floor(lane_length / (vehicle_length + safety_gap))
 }

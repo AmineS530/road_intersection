@@ -1,6 +1,7 @@
 use macroquad::prelude::*;
 
 mod types;
+
 use types::*;
 
 fn window_conf() -> Conf {
@@ -68,7 +69,7 @@ async fn main() {
             0.0,                  // start x
             screen_width(),       // end x
             30.0,                 // dash length
-            25.0,                 // gap
+            30.0,                 // gap
             6.0,                  // thickness
             WHITE,
         );
@@ -79,7 +80,7 @@ async fn main() {
             0.0,                 // start y
             screen_height(),     // end y
             30.0,                // dash length
-            25.0,                // gap
+            30.0,                // gap
             6.0,                 // thickness
             WHITE,
         );
@@ -98,8 +99,8 @@ fn draw_horizontal_dashed_line(
     color: Color,
 ) {
     let mut x = x_start;
-    let inter_left = G_WIDTH / 2.0 - INTERSECTION_SIZE / 2.0;
-    let inter_right = G_WIDTH / 2.0 + INTERSECTION_SIZE / 2.0;
+    let inter_left = G_WIDTH / 2.0 - ROAD_WIDTH;
+    let inter_right = G_WIDTH / 2.0 + ROAD_WIDTH;
 
     while x < x_end {
         let dash_right = x + dash_len;
@@ -123,8 +124,8 @@ fn draw_vertical_dashed_line(
     color: Color,
 ) {
     let mut y = y_start;
-    let inter_top = G_HEIGHT / 2.0 - INTERSECTION_SIZE;
-    let inter_bottom = G_HEIGHT / 2.0 + INTERSECTION_SIZE;
+    let inter_top = G_HEIGHT / 2.0 - ROAD_WIDTH;
+    let inter_bottom = G_HEIGHT / 2.0 + ROAD_WIDTH;
 
     while y < y_end {
         let dash_bottom = y + dash_len;
