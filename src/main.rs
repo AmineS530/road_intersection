@@ -1,139 +1,120 @@
 use macroquad::prelude::*;
 
-mod types;
-use types::*;
+mod road;
 
-fn window_conf() -> Conf {
-    Conf {
-        window_title: "Road Intersection".to_string(),
-        window_width: G_WIDTH as i32,
-        window_height: G_HEIGHT as i32,
-        window_resizable: false,
-        fullscreen: false,
-        ..Default::default()
-    }
-}
+use road::*;
 
-#[macroquad::main(window_conf)]
+#[macroquad::main("Road Intersection")]
 async fn main() {
-    let grass: Texture2D = load_texture("assets/background.png").await.unwrap();
-    grass.set_filter(FilterMode::Nearest);
+    let width = screen_width();
+    let height = screen_height();
+    let mut north_lane = Lane::new(
+        DirectionLane::North,
+        Point(width / 2.0 - 50.0, 0.0),
+        Point(width / 2.0, 0.0)
+    );
+    let mut west_lane = Lane::new(
+        DirectionLane::West,
+        Point(width - 50.0, height / 2.0 - 50.0),
+        Point(width / 2.0, height / 2.0)
+    );
+    let mut south_lane = Lane::new(
+        DirectionLane::South,
+        Point(width / 2.0, height - 50.0),
+        Point(width / 2.0, height / 2.0)
+    );
+    let mut east_lane = Lane::new(
+        DirectionLane::North,
+        Point(0.0, height / 2.0),
+        Point(width / 2.0, 0.0)
+    );
+
     loop {
         clear_background(BLACK);
-        draw_texture_ex(
-            &grass,
-            0.0,
-            0.0,
-            WHITE,
-            DrawTextureParams {
-                dest_size: Some(vec2(screen_width(), screen_height())),
-                ..Default::default()
-            },
-        );
-        // North : Up
-        draw_rectangle(
-            G_HEIGHT / 2.0, // x
-            0.0,            // y
-            ROAD_WIDTH,     // width
-            G_HEIGHT,       // width
-            BLACK,
-        );
-        // South : Down
-        draw_rectangle(
-            G_HEIGHT / 2.0 - ROAD_WIDTH, // x
-            0.0,                         // y
-            ROAD_WIDTH,                  // width
-            G_HEIGHT,                    // width
-            DARKGRAY,
-        );
-        // East : Left
-        draw_rectangle(
-            0.0,                        // y
-            G_WIDTH / 2.0 - ROAD_WIDTH, // x
-            G_WIDTH,                    // width
-            ROAD_WIDTH,                 // width
-            DARKGRAY,
-        );
-        // West : Right
-        draw_rectangle(
-            0.0,           // y
-            G_WIDTH / 2.0, // x
-            G_WIDTH,       // width
-            ROAD_WIDTH,    // width
-            BLACK,
-        );
 
-        draw_horizontal_dashed_line(
-            G_HEIGHT / 2.0 - 5.0, // y position
-            0.0,                  // start x
-            screen_width(),       // end x
-            30.0,                 // dash length
-            25.0,                 // gap
-            6.0,                  // thickness
-            WHITE,
-        );
+        // vertical lines so y =0
+        draw_line(width / 2.0, 0.0, width / 2.0, height, 1.0, WHITE);
 
-        // Vertical dashed line
-        draw_vertical_dashed_line(
-            G_WIDTH / 2.0 - 5.0, // x position
-            0.0,                 // start y
-            screen_height(),     // end y
-            30.0,                // dash length
-            25.0,                // gap
-            6.0,                 // thickness
-            WHITE,
-        );
-        // finish frame
-        next_frame().await
+        // draw 2 more lines with the same distance from the center
+        draw_line(width / 2.0 - 50.0, 0.0, width / 2.0 - 50.0, height, 1.0, WHITE);
+        draw_line(width / 2.0 + 50.0, 0.0, width / 2.0 + 50.0, height, 1.0, WHITE);
+
+        // horizontal lines  so  x is width/2 and y is height/2
+        draw_line(0.0, height / 2.0, width, height / 2.0, 1.0, WHITE);
+        // the same with these lines too the 50px for the cars where they need to move
+        draw_line(0.0, height / 2.0 - 50.0, width, height / 2.0 - 50.0, 1.0, WHITE);
+        draw_line(0.0, height / 2.0 + 50.0, width, height / 2.0 + 50.0, 1.0, WHITE);
+        // let's handle the keys pressed so everytime we press a key a
+
+        if is_key_pressed(KeyCode::Escape) {
+            std::process::exit(0);
+        }
+
+        // we need to create and know the lanes and based on this we will draw the vehicles
+
+        let last_pressed_key = get_last_key_pressed();
+        match last_pressed_key {
+            Some(key_val_pressed) => {
+                if is_allowed_key(key_val_pressed) {
+                    match key_val_pressed {
+                        KeyCode::Up => {
+                            north_lane.vehicles.push(Vehicle::new(&north_lane));
+                        }
+                        KeyCode::Down => {
+                            south_lane.vehicles.push(Vehicle::new(&south_lane));
+                        }
+                        KeyCode::Left => {
+                            east_lane.vehicles.push(Vehicle::new(&east_lane));
+                        }
+                        KeyCode::Right => {
+                            west_lane.vehicles.push(Vehicle::new(&west_lane));
+                        }
+                        KeyCode::R => {
+                            let random_direction_lane = random_direction_lane();
+                            match random_direction_lane {
+                                DirectionLane::North => {
+                                    north_lane.vehicles.push(Vehicle::new(&north_lane));
+                                }
+                                DirectionLane::South => {
+                                    south_lane.vehicles.push(Vehicle::new(&south_lane));
+                                }
+                                DirectionLane::East => {
+                                    east_lane.vehicles.push(Vehicle::new(&east_lane));
+                                }
+                                DirectionLane::West => {
+                                    west_lane.vehicles.push(Vehicle::new(&west_lane));
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            None => {}
+        }
+
+        for car in &east_lane.vehicles {
+            car.draw_vehicle();
+        }
+        for car in &west_lane.vehicles {
+            car.draw_vehicle();
+        }
+        for car in &north_lane.vehicles {
+            car.draw_vehicle();
+        }
+
+        for car in &south_lane.vehicles {
+            car.draw_vehicle();
+        }
+
+        next_frame().await;
     }
 }
 
-fn draw_horizontal_dashed_line(
-    y: f32,
-    x_start: f32,
-    x_end: f32,
-    dash_len: f32,
-    gap: f32,
-    thickness: f32,
-    color: Color,
-) {
-    let mut x = x_start;
-    let inter_left = G_WIDTH / 2.0 - INTERSECTION_SIZE / 2.0;
-    let inter_right = G_WIDTH / 2.0 + INTERSECTION_SIZE / 2.0;
-
-    while x < x_end {
-        let dash_right = x + dash_len;
-
-        // Only draw if the dash is fully outside the intersection zone
-        if dash_right < inter_left || x > inter_right {
-            draw_rectangle(x, y, dash_len, thickness, color);
-        }
-
-        x += dash_len + gap;
-    }
-}
-
-fn draw_vertical_dashed_line(
-    x: f32,
-    y_start: f32,
-    y_end: f32,
-    dash_len: f32,
-    gap: f32,
-    thickness: f32,
-    color: Color,
-) {
-    let mut y = y_start;
-    let inter_top = G_HEIGHT / 2.0 - INTERSECTION_SIZE;
-    let inter_bottom = G_HEIGHT / 2.0 + INTERSECTION_SIZE;
-
-    while y < y_end {
-        let dash_bottom = y + dash_len;
-
-        // Only draw if the dash is fully outside the intersection zone
-        if dash_bottom < inter_top || y > inter_bottom {
-            draw_rectangle(x, y, thickness, dash_len, color);
-        }
-
-        y += dash_len + gap;
-    }
+pub fn is_allowed_key(keycode: KeyCode) -> bool {
+    keycode == KeyCode::Up ||
+        keycode == KeyCode::Down ||
+        keycode == KeyCode::Left ||
+        keycode == KeyCode::Right ||
+        keycode == KeyCode::R
 }
