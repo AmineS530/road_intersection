@@ -66,8 +66,6 @@ impl Lane {
             vehicles: Vec::new(),
         }
     }
-
-    pub fn create_new_vehicle() {}
 }
 
 #[derive(Debug, Clone)]
@@ -85,6 +83,7 @@ pub struct Vehicle {
     pub color_rgb: Color,
     pub direction_lane: DirectionLane,
     pub route: Route,
+    direction: (i32, i32),
 }
 
 impl Vehicle {
@@ -92,6 +91,12 @@ impl Vehicle {
         let mut rng = rng();
         let random_color: ColorDir = rng.sample(StandardUniform);
         let direction_lane = &lane.direction;
+        let direction = match direction_lane {
+            DirectionLane::South => (0, -1),
+            DirectionLane::West => (-1, 0),
+            DirectionLane::East => (1, 0),
+            DirectionLane::North => (0, 1),
+        };
         let color_rgb = Self::get_color_rgb(random_color.clone());
         Self {
             x: lane.start_position.0,
@@ -100,6 +105,7 @@ impl Vehicle {
             route: Self::get_route(random_color.clone()),
             direction_lane: direction_lane.clone(),
             color_rgb: color_rgb,
+            direction : direction
         }
     }
 
@@ -123,9 +129,12 @@ impl Vehicle {
         draw_rectangle(self.x, self.y, 45.0, 45.0, self.color_rgb);
     }
 
-    fn update() {}
+    pub fn update(&mut self) {
+        self.x = self.x + (self.direction.0 as f32) * 1.0;
+        self.y = self.y + (self.direction.1 as f32) * 1.0;
+    }
 
-    fn change_direction() {}
+    fn change_direction(&mut self) {}
 }
 
 pub fn random_direction_lane() -> DirectionLane {

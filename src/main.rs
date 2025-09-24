@@ -11,22 +11,22 @@ async fn main() {
     let mut north_lane = Lane::new(
         DirectionLane::North,
         Point(width / 2.0 - 50.0, 0.0),
-        Point(width / 2.0, 0.0)
+        Point(width / 2.0 - 50.0, height / 2.0 - 50.0)
     );
     let mut west_lane = Lane::new(
         DirectionLane::West,
         Point(width - 50.0, height / 2.0 - 50.0),
-        Point(width / 2.0, height / 2.0)
+        Point(width / 2.0 + 50.0, height / 2.0 - 50.0)
     );
     let mut south_lane = Lane::new(
         DirectionLane::South,
         Point(width / 2.0, height - 50.0),
-        Point(width / 2.0, height / 2.0)
+        Point(width / 2.0, height / 2.0 + 50.0)
     );
     let mut east_lane = Lane::new(
-        DirectionLane::North,
+        DirectionLane::East,
         Point(0.0, height / 2.0),
-        Point(width / 2.0, 0.0)
+        Point(width / 2.0 - 50.0, height / 2.0)
     );
 
     loop {
@@ -93,18 +93,22 @@ async fn main() {
             None => {}
         }
 
-        for car in &east_lane.vehicles {
+        for car in &mut east_lane.vehicles {
             car.draw_vehicle();
+            car.update();
         }
-        for car in &west_lane.vehicles {
+        for car in &mut west_lane.vehicles {
             car.draw_vehicle();
+            car.update();
         }
-        for car in &north_lane.vehicles {
+        for car in &mut north_lane.vehicles {
             car.draw_vehicle();
+            car.update();
         }
 
-        for car in &south_lane.vehicles {
+        for car in &mut south_lane.vehicles {
             car.draw_vehicle();
+            car.update();
         }
 
         next_frame().await;
