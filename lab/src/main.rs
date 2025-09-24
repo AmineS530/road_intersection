@@ -38,7 +38,7 @@ impl Car {
 
     fn frame_count(&self) -> usize {
         match self.direction {
-            Direction::Down => 4,  // 8 frames in "down" row
+            Direction::Down => 8,  // 8 frames in "down" row
             Direction::Left => 2,  // 2 frames in "left" row
             Direction::Right => 2, // 2 frames in "right" row
             Direction::Up => 2,    // 1 frame in "up" row
@@ -66,11 +66,10 @@ impl Car {
             frame_h,
         );
 
-        
         draw_texture_ex(
             texture,
             self.x + 20.,
-            self.y ,
+            self.y,
             WHITE,
             DrawTextureParams {
                 source: Some(source),
