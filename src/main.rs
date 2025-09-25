@@ -2,7 +2,7 @@ use macroquad::prelude::*;
 
 mod animate_cars;
 mod brain;
-mod cars;
+
 mod graphics;
 mod traffic_lights;
 mod types;

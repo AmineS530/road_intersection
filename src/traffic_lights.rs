@@ -3,19 +3,19 @@ use macroquad::prelude::*;
 
 impl TrafficLight {
     pub fn update(&mut self, dt: f32) {
-        self.timer += dt;
+        // self.timer += dt;
 
-        match self.state {
-            Light::Green if self.timer >= self.green_time => {
-                self.state = Light::Red;
-                self.timer = 0.0;
-            }
-            Light::Red if self.timer >= self.red_time => {
-                self.state = Light::Green;
-                self.timer = 0.0;
-            }
-            _ => {}
-        }
+        // match self.state {
+        //     Light::Green if self.timer >= self.green_time => {
+        //         self.state = Light::Red;
+        //         self.timer = 0.0;
+        //     }
+        //     Light::Red if self.timer >= self.red_time => {
+        //         self.state = Light::Green;
+        //         self.timer = 0.0;
+        //     }
+        //     _ => {}
+        // }
     }
 
     pub fn draw(&self, x: f32, y: f32) {

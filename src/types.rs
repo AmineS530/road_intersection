@@ -27,7 +27,7 @@ pub enum Direction {
 }
 
 // Route choice
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 
 pub enum Route {
     Left,
@@ -72,7 +72,7 @@ pub struct Lane {
     pub direction: Direction,
     pub start_x: f32,
     pub start_y: f32,
-    pub length: f32, // ?
+    pub length: f32,     // ?
     pub capacity: usize, // capacity = floor(lane_length / (vehicle_length + safety_gap))
     pub traffic_light: TrafficLight,
 }

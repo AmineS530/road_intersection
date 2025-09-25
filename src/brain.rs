@@ -3,8 +3,8 @@ use macroquad::prelude::{KeyCode, is_key_pressed};
 use rand::random_range;
 use std::collections::HashMap;
 
-fn next_direction(entry: Direction, route: Route) -> Direction {
-    match (entry, route) {
+pub fn next_direction(entry: Direction, route: Route) -> Direction {
+     match (entry, route) {
         (Direction::North, Route::Straight) => Direction::South,
         (Direction::North, Route::Left) => Direction::East,
         (Direction::North, Route::Right) => Direction::West,
@@ -76,14 +76,14 @@ impl Lane {
 
         // Directly create a traffic light
         let traffic_light = TrafficLight {
-            state: Light::Red,
+            state: Light::Green,
             timer: 0.0,
-            green_time: 5.0,
+            green_time: 999.0,
             red_time: 5.0,
         };
 
         Self {
-            direction,
+            direction, 
             start_x,
             start_y,
             length: lane_length,
@@ -193,7 +193,7 @@ pub fn update_draw_lanes(lanes: &mut HashMap<Direction, Lane>, dt: f32, sprites:
             };
 
             let final_speed = if light_stop { 0.0 } else { allowed_speed };
-            vehicle.update_with_speed(dt, final_speed);
+            vehicle.update(dt, final_speed);
             vehicle.draw(sprites);
         }
     }
