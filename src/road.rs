@@ -83,7 +83,7 @@ impl Lane {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum Route {
     Straight,
     Left,
@@ -147,12 +147,11 @@ impl Vehicle {
     }
 
     pub fn update(&mut self) {
-        // Check distance to intersection and possibly change direction before moving
         if self.should_change_direction() {
+            self.change_pixels();
             self.change_direction();
         }
 
-        // Move vehicle in current direction
         self.x += (self.direction.0 as f32) * 1.0;
         self.y += (self.direction.1 as f32) * 1.0;
     }
@@ -162,32 +161,43 @@ impl Vehicle {
     }
 
     fn change_direction(&mut self) {
-        // Assuming is_at_intersection check is done before calling this
-
         self.direction = match (self.direction, &self.route) {
-            // Approaching from North
-            ((0, 1), Route::Left) => (-1, 0), // Turn West
-            ((0, 1), Route::Right) => (1, 0), // Turn East
+            ((0, 1), Route::Left) => (1, 0),
+            ((0, 1), Route::Right) => (-1, 0),
             ((0, 1), Route::Straight) => (0, 1),
 
-            // Approaching from South
-            ((0, -1), Route::Left) => (-1, 0), // Turn East
-            ((0, -1), Route::Right) => (1, 0), // Turn West
+            ((0, -1), Route::Left) => (-1, 0),
+            ((0, -1), Route::Right) => (1, 0),
             ((0, -1), Route::Straight) => (0, -1),
 
-            // Approaching from East
-            ((1, 0), Route::Left) => (0, 1), // Turn North
-            ((1, 0), Route::Right) => (0, -1), // Turn South
+            ((1, 0), Route::Left) => (0, -1),
+            ((1, 0), Route::Right) => (0, 1),
             ((1, 0), Route::Straight) => (1, 0),
 
-            // Approaching from West
-            ((-1, 0), Route::Left) => (0, -1), // Turn South
-            ((-1, 0), Route::Right) => (0, 1), // Turn North
+            ((-1, 0), Route::Left) => (0, 1),
+            ((-1, 0), Route::Right) => (0, -1),
             ((-1, 0), Route::Straight) => (-1, 0),
-
-            // Default no change
             (dir, _) => dir,
         };
+    }
+
+    fn change_pixels(&mut self) {
+        if self.route == Route::Left {
+            match self.lane.direction {
+                DirectionLane::North => {
+                    self.y += 50.0;
+                }
+                DirectionLane::South => {
+                    self.y -= 50.0;
+                }
+                DirectionLane::East => {
+                    self.x += 50.0;
+                }
+                DirectionLane::West => {
+                    self.x -= 50.0;
+                }
+            };
+        }
     }
 }
 
@@ -195,8 +205,6 @@ pub fn random_direction_lane() -> DirectionLane {
     let random_direction_lane: DirectionLane = rng().sample(StandardUniform);
     random_direction_lane
 }
-
-use macroquad::prelude::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LightState {
@@ -206,7 +214,7 @@ pub enum LightState {
 
 #[derive(Debug, Clone)]
 pub struct TrafficLight {
-    pub position: Point, // top-left corner for rectangle drawing
+    pub position: Point,
     pub state: LightState,
     pub timer: f32,
     pub green_duration: f32,
