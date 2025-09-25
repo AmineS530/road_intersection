@@ -1,14 +1,14 @@
 use macroquad::prelude::*;
 
 #[derive(Clone, Copy)]
-enum Direction {
-    Down,
-    Up,
-    Left,
-    Right,
+pub enum Direction {
+    South,
+    North,
+    East,
+    West,
 }
 
-struct Car {
+struct Vehicle {
     x: f32,
     y: f32,
     direction: Direction,
@@ -16,7 +16,13 @@ struct Car {
     frame_timer: f32,
 }
 
-impl Car {
+impl Vehicle {
+     fn is_in_bounds(&self) -> bool {
+        self.x >= -100.0 
+            && self.x <= G_WIDTH + 100.0
+            && self.y >= -100.0
+            && self.y <= G_HEIGHT + 100.0
+    }
     fn update(&mut self, dt: f32) {
         // Step the timer
         self.frame_timer += dt;
@@ -29,19 +35,19 @@ impl Car {
 
         // Move car
         match self.direction {
-            Direction::Down => self.y += 100.0 * dt,
-            Direction::Up => self.y -= 100.0 * dt,
-            Direction::Left => self.x -= 100.0 * dt,
-            Direction::Right => self.x += 100.0 * dt,
+            Direction::South => self.y += 100.0 * dt,
+            Direction::North => self.y -= 100.0 * dt,
+            Direction::East => self.x -= 100.0 * dt,
+            Direction::West => self.x += 100.0 * dt,
         }
     }
 
     fn frame_count(&self) -> usize {
         match self.direction {
-            Direction::Down => 8,  // 8 frames in "down" row
-            Direction::Left => 2,  // 2 frames in "left" row
-            Direction::Right => 2, // 2 frames in "right" row
-            Direction::Up => 2,    // 1 frame in "up" row
+            Direction::South => 8,  // 8 frames in "South" row
+            Direction::East => 2,  // 2 frames in "East" row
+            Direction::West => 2, // 2 frames in "" row
+            Direction::North => 2,    // 1 frame in "North" row
         }
     }
 
@@ -50,10 +56,10 @@ impl Car {
         let frame_h = 88.0;
 
         let (row, count) = match self.direction {
-            Direction::Down => (0, 8),
-            Direction::Left => (1, 2),
-            Direction::Right => (2, 2),
-            Direction::Up => (3, 2),
+            Direction::South => (0, 8),
+            Direction::East => (1, 2),
+            Direction::West => (2, 2),
+            Direction::North => (3, 2),
         };
 
         // Clamp frame index to available count
@@ -80,14 +86,15 @@ impl Car {
     }
 }
 
+
 #[macroquad::main("Car Animation Test")]
 async fn main() {
     let texture: Texture2D = load_texture("../assets/sprites/car_00.png").await.unwrap();
 
-    let mut car = Car {
+    let mut car = Vehicle {
         x: 200.0,
         y: 100.0,
-        direction: Direction::Down,
+        direction: Direction::South,
         frame_index: 0,
         frame_timer: 0.0,
     };
@@ -101,19 +108,19 @@ async fn main() {
 
         // Example: press LEFT/RIGHT arrow to turn car
         if is_key_pressed(KeyCode::Left) {
-            car.direction = Direction::Left;
+            car.direction = Direction::East;
             car.frame_index = 0;
         }
         if is_key_pressed(KeyCode::Right) {
-            car.direction = Direction::Right;
+            car.direction = Direction::West;
             car.frame_index = 0;
         }
         if is_key_pressed(KeyCode::Up) {
-            car.direction = Direction::Up;
+            car.direction = Direction::North;
             car.frame_index = 0;
         }
         if is_key_pressed(KeyCode::Down) {
-            car.direction = Direction::Down;
+            car.direction = Direction::South;
             car.frame_index = 0;
         }
 
