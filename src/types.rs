@@ -3,7 +3,7 @@ use macroquad::prelude::Texture2D;
 pub const G_WIDTH: f32 = 1000.0;
 pub const G_HEIGHT: f32 = 1000.0;
 pub const ROAD_WIDTH: f32 = 75.0;
-pub const SAFETY_GAP: f32 = 60.0;
+pub const SAFETY_GAP: f32 = 30.0;
 pub const SPAWNING_OFFSET: f32 = 30.0;
 pub const VEHICLE_LENGTH_X: f32 = 88.0;
 pub const VEHICLE_LENGTH_Y: f32 = 75.0;
@@ -60,19 +60,19 @@ pub struct Sprites {
 }
 // Traffic light
 pub struct TrafficLight {
-    pub direction: Direction,
     pub state: Light,
     pub timer: f32,      // counts time since last switch
     pub green_time: f32, // how long green lasts
+    pub red_time: f32,
 }
 
 // Road / lane capacity
 pub struct Lane {
-    pub light_status: Option<TrafficLight>,
     pub vehicles: Vec<Vehicle>,
     pub direction: Direction,
     pub start_x: f32,
     pub start_y: f32,
     pub length: f32, // ?
     pub capacity: usize, // capacity = floor(lane_length / (vehicle_length + safety_gap))
+    pub traffic_light: TrafficLight,
 }

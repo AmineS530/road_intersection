@@ -36,22 +36,20 @@ impl Vehicle {
             && self.y <= G_HEIGHT + 100.0
     }
 
-    pub fn update(&mut self, dt: f32) {
-        // Step the timer
+    pub fn update_with_speed(&mut self, dt: f32, speed: f32) {
+        // Step animation timer
         self.frame_timer += dt;
-
-        // Change frame every 0.1s
         if self.frame_timer > 0.1 {
             self.frame_timer = 0.0;
             self.frame_index = (self.frame_index + 1) % self.frame_count();
         }
 
-        // Move car
+        // Move according to direction, using custom speed
         match self.direction {
-            Direction::South => self.y += self.speed * dt,
-            Direction::North => self.y -= self.speed * dt,
-            Direction::East => self.x -= self.speed * dt,
-            Direction::West => self.x += self.speed * dt,
+            Direction::South => self.y += speed * dt,
+            Direction::North => self.y -= speed * dt,
+            Direction::West => self.x += speed * dt,
+            Direction::East => self.x -= speed * dt,
         }
     }
 

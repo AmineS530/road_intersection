@@ -72,16 +72,10 @@ pub fn draw_window(grass: &Texture2D) {
         0.0,
         ROAD_WIDTH,
         G_HEIGHT,
-        DARKGRAY,
+        BLACK,
     );
     // East : Left
-    draw_rectangle(
-        0.0,
-        G_WIDTH / 2.0 - ROAD_WIDTH,
-        G_WIDTH,
-        ROAD_WIDTH,
-        DARKGRAY,
-    );
+    draw_rectangle(0.0, G_WIDTH / 2.0 - ROAD_WIDTH, G_WIDTH, ROAD_WIDTH, BLACK);
     // West : Right
     draw_rectangle(0.0, G_WIDTH / 2.0, G_WIDTH, ROAD_WIDTH, BLACK);
 
@@ -105,4 +99,3 @@ pub fn draw_window(grass: &Texture2D) {
         WHITE,
     );
 }
-

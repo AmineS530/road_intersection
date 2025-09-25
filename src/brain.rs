@@ -37,9 +37,8 @@ fn spawn_from_key(lanes: &mut HashMap<Direction, Lane>, key: KeyCode, spawn_dire
     if is_key_pressed(key) {
         if let Some(lane) = lanes.get_mut(&spawn_direction) {
             if lane.vehicles.len() < lane.capacity {
-                if let Some(car) = lane.spawn_vehicle_safe() {
+                let car = lane.spawn_vehicle() ;
                     lane.vehicles.push(car);
-                }
             }
         }
     }
@@ -74,7 +73,14 @@ impl Lane {
                 VEHICLE_LENGTH_X,
             ),
         };
-        // Calculate max number of vehicles that can safely fit
+
+        // Directly create a traffic light
+        let traffic_light = TrafficLight {
+            state: Light::Red,
+            timer: 0.0,
+            green_time: 5.0,
+            red_time: 5.0,
+        };
 
         Self {
             direction,
@@ -83,11 +89,11 @@ impl Lane {
             length: lane_length,
             vehicles: Vec::new(),
             capacity: 20,
-            light_status: None,
+            traffic_light,
         }
     }
-    pub fn update_light(&mut self, light: TrafficLight) {
-        self.capacity = if light.state == Light::Green {
+    pub fn update_capacity_from_light(&mut self) {
+        self.capacity = if self.traffic_light.is_green() {
             20
         } else {
             let lane_length = match self.direction {
@@ -103,30 +109,6 @@ impl Lane {
 
             ((lane_length) / (vehicle_length + SAFETY_GAP)).floor() as usize
         };
-    }
-    /// Spawn a vehicle only if there is space at the start of the lane
-    pub fn spawn_vehicle_safe(&mut self) -> Option<Vehicle> {
-        // If lane is empty, always safe
-        if self.vehicles.is_empty() {
-            return Some(self.spawn_vehicle());
-        }
-
-        // Get the first vehicle in the lane (closest to spawn)
-        let first_car = &self.vehicles[0];
-
-        // Check distance based on lane direction
-        let safe_to_spawn = match self.direction {
-            Direction::North => first_car.y > VEHICLE_LENGTH_Y + SAFETY_GAP,
-            Direction::South => first_car.y < G_HEIGHT - VEHICLE_LENGTH_Y - SAFETY_GAP,
-            Direction::East => first_car.x > VEHICLE_LENGTH_X + SAFETY_GAP,
-            Direction::West => first_car.x < G_WIDTH - VEHICLE_LENGTH_X - SAFETY_GAP,
-        };
-
-        if safe_to_spawn {
-            Some(self.spawn_vehicle())
-        } else {
-            None
-        }
     }
 
     pub fn spawn_vehicle(&mut self) -> Vehicle {
@@ -157,21 +139,66 @@ impl Lane {
 
         lanes
     }
+    pub fn safe_speed(&self, idx: usize) -> f32 {
+        let vehicle = &self.vehicles[idx];
+
+        // Check the car in front
+        if idx == 0 {
+            // first car in lane → no one in front
+            return vehicle.speed;
+        }
+
+        let front = &self.vehicles[idx - 1];
+        let gap = match vehicle.direction {
+            Direction::South => front.y - vehicle.y - VEHICLE_LENGTH_Y,
+            Direction::North => vehicle.y - front.y - VEHICLE_LENGTH_Y,
+            Direction::East => vehicle.x - front.x - VEHICLE_LENGTH_X,
+            Direction::West => front.x - vehicle.x - VEHICLE_LENGTH_X,
+        };
+
+        // If gap < SAFETY_GAP → stop, otherwise move at normal speed
+        if gap < SAFETY_GAP { 0.0 } else { vehicle.speed }
+    }
 }
 
 pub fn get_random_route() -> Route {
     let options: [Route; 3] = [Route::Straight, Route::Left, Route::Right];
     options[random_range(0..3)]
 }
-
 pub fn update_draw_lanes(lanes: &mut HashMap<Direction, Lane>, dt: f32, sprites: &Sprites) {
     for lane in lanes.values_mut() {
-        for vehicle in lane.vehicles.iter_mut() {
-            vehicle.update(dt);
+        for i in 0..lane.vehicles.len() {
+            let allowed_speed = lane.safe_speed(i);
+
+            // Also stop for red light
+            let vehicle = &mut lane.vehicles[i];
+            let stop_distance = 50.0;
+            let intersection_pos = G_WIDTH / 2.0;
+
+            let light_stop = match lane.direction {
+                Direction::North => {
+                    !lane.traffic_light.is_green() && vehicle.y <= intersection_pos + stop_distance
+                }
+                Direction::South => {
+                    !lane.traffic_light.is_green()
+                        && vehicle.y >= G_HEIGHT - intersection_pos - stop_distance
+                }
+                Direction::East => {
+                    !lane.traffic_light.is_green() && vehicle.x <= intersection_pos + stop_distance
+                }
+                Direction::West => {
+                    !lane.traffic_light.is_green()
+                        && vehicle.x >= G_WIDTH - intersection_pos - stop_distance
+                }
+            };
+
+            let final_speed = if light_stop { 0.0 } else { allowed_speed };
+            vehicle.update_with_speed(dt, final_speed);
             vehicle.draw(sprites);
         }
     }
 }
+
 pub fn remove_out_of_bounds_vehicles(lanes: &mut HashMap<Direction, Lane>) {
     for lane in lanes.values_mut() {
         lane.vehicles.retain(|v| v.is_in_bounds());
