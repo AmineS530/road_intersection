@@ -11,26 +11,55 @@ async fn main() {
     let mut north_lane = Lane::new(
         DirectionLane::North,
         Point(width / 2.0 - 50.0, 0.0),
-        Point(width / 2.0 - 50.0, height / 2.0 - 50.0)
+        Point(width / 2.0 - 50.0, height / 2.0 - 50.0),
+        width,
+        height
     );
-    let mut west_lane = Lane::new(
-        DirectionLane::West,
-        Point(width - 50.0, height / 2.0 - 50.0),
-        Point(width / 2.0 + 50.0, height / 2.0 - 50.0)
-    );
+
     let mut south_lane = Lane::new(
         DirectionLane::South,
         Point(width / 2.0, height - 50.0),
-        Point(width / 2.0, height / 2.0 + 50.0)
+        Point(width / 2.0, height / 2.0 + 50.0),
+        width,
+        height
     );
+
+    let mut west_lane = Lane::new(
+        DirectionLane::West,
+        Point(width - 50.0, height / 2.0 - 50.0),
+        Point(width / 2.0 + 50.0, height / 2.0 - 50.0),
+        width,
+        height
+    );
+
     let mut east_lane = Lane::new(
         DirectionLane::East,
         Point(0.0, height / 2.0),
-        Point(width / 2.0 - 50.0, height / 2.0)
+        Point(width / 2.0 - 50.0, height / 2.0),
+        width,
+        height
     );
+    let center_x = width / 2.0;
+    let center_y = height / 2.0;
+
+    let mut north_light = TrafficLight::new(Point(center_x - 95.0, center_y - 95.0), 5.0, 5.0);
+    let mut south_light = TrafficLight::new(Point(center_x + 50.0, center_y + 50.0), 5.0, 5.0);
+    let mut west_light = TrafficLight::new(Point(center_x + 50.0, center_y - 95.0), 5.0, 5.0);
+    let mut east_light = TrafficLight::new(Point(center_x - 95.0, center_y + 50.0), 5.0, 5.0);
 
     loop {
         clear_background(BLACK);
+        let dt = get_frame_time();
+
+        north_light.update(dt);
+        south_light.update(dt);
+        west_light.update(dt);
+        east_light.update(dt);
+
+        north_light.draw();
+        south_light.draw();
+        west_light.draw();
+        east_light.draw();
 
         // vertical lines so y =0
         draw_line(width / 2.0, 0.0, width / 2.0, height, 1.0, WHITE);

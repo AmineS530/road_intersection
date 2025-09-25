@@ -54,16 +54,31 @@ pub struct Lane {
     pub start_position: Point,
     pub end_position: Point,
     pub vehicles: Vec<Vehicle>,
+    pub intersection_point: Point,
     // pub length: f64, // depends on the direction vertical or horizontal
 }
 
 impl Lane {
-    pub fn new(direction: DirectionLane, start_position: Point, end_position: Point) -> Self {
+    pub fn new(
+        direction: DirectionLane,
+        start_position: Point,
+        end_position: Point,
+        width: f32,
+        height: f32
+    ) -> Self {
+        let intersection_pt = match direction {
+            DirectionLane::North => Point(width / 2.0 - 50.0, height / 2.0 - 50.0),
+            DirectionLane::South => Point(width / 2.0, height / 2.0),
+            DirectionLane::West => Point(width / 2.0, height / 2.0 - 50.0),
+            DirectionLane::East => Point(width / 2.0 - 50.0, height / 2.0),
+        };
+
         Self {
             direction: direction,
             start_position: start_position,
             end_position: end_position,
             vehicles: Vec::new(),
+            intersection_point: intersection_pt,
         }
     }
 }
@@ -83,6 +98,7 @@ pub struct Vehicle {
     pub color_rgb: Color,
     pub direction_lane: DirectionLane,
     pub route: Route,
+    lane: Lane,
     direction: (i32, i32),
 }
 
@@ -105,7 +121,8 @@ impl Vehicle {
             route: Self::get_route(random_color.clone()),
             direction_lane: direction_lane.clone(),
             color_rgb: color_rgb,
-            direction : direction
+            direction: direction,
+            lane: lane.clone(),
         }
     }
 
@@ -130,14 +147,104 @@ impl Vehicle {
     }
 
     pub fn update(&mut self) {
-        self.x = self.x + (self.direction.0 as f32) * 1.0;
-        self.y = self.y + (self.direction.1 as f32) * 1.0;
+        // Check distance to intersection and possibly change direction before moving
+        if self.should_change_direction() {
+            self.change_direction();
+        }
+
+        // Move vehicle in current direction
+        self.x += (self.direction.0 as f32) * 1.0;
+        self.y += (self.direction.1 as f32) * 1.0;
     }
 
-    fn change_direction(&mut self) {}
+    fn should_change_direction(&self) -> bool {
+        self.x == self.lane.intersection_point.0 && self.y == self.lane.intersection_point.1
+    }
+
+    fn change_direction(&mut self) {
+        // Assuming is_at_intersection check is done before calling this
+
+        self.direction = match (self.direction, &self.route) {
+            // Approaching from North
+            ((0, 1), Route::Left) => (-1, 0), // Turn West
+            ((0, 1), Route::Right) => (1, 0), // Turn East
+            ((0, 1), Route::Straight) => (0, 1),
+
+            // Approaching from South
+            ((0, -1), Route::Left) => (-1, 0), // Turn East
+            ((0, -1), Route::Right) => (1, 0), // Turn West
+            ((0, -1), Route::Straight) => (0, -1),
+
+            // Approaching from East
+            ((1, 0), Route::Left) => (0, 1), // Turn North
+            ((1, 0), Route::Right) => (0, -1), // Turn South
+            ((1, 0), Route::Straight) => (1, 0),
+
+            // Approaching from West
+            ((-1, 0), Route::Left) => (0, -1), // Turn South
+            ((-1, 0), Route::Right) => (0, 1), // Turn North
+            ((-1, 0), Route::Straight) => (-1, 0),
+
+            // Default no change
+            (dir, _) => dir,
+        };
+    }
 }
 
 pub fn random_direction_lane() -> DirectionLane {
     let random_direction_lane: DirectionLane = rng().sample(StandardUniform);
     random_direction_lane
+}
+
+use macroquad::prelude::*;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum LightState {
+    Red,
+    Green,
+}
+
+#[derive(Debug, Clone)]
+pub struct TrafficLight {
+    pub position: Point, // top-left corner for rectangle drawing
+    pub state: LightState,
+    pub timer: f32,
+    pub green_duration: f32,
+    pub red_duration: f32,
+}
+
+impl TrafficLight {
+    pub fn new(position: Point, green_duration: f32, red_duration: f32) -> Self {
+        Self {
+            position,
+            state: LightState::Red,
+            timer: 0.0,
+            green_duration,
+            red_duration,
+        }
+    }
+
+    pub fn update(&mut self, dt: f32) {
+        self.timer += dt;
+        match self.state {
+            LightState::Green if self.timer >= self.green_duration => {
+                self.state = LightState::Red;
+                self.timer = 0.0;
+            }
+            LightState::Red if self.timer >= self.red_duration => {
+                self.state = LightState::Green;
+                self.timer = 0.0;
+            }
+            _ => {}
+        }
+    }
+
+    pub fn is_green(&self) -> bool {
+        self.state == LightState::Green
+    }
+
+    pub fn draw(&self) {
+        let color = if self.state == LightState::Green { GREEN } else { RED };
+        draw_rectangle(self.position.0, self.position.1, 45.0, 45.0, color);
+    }
 }
